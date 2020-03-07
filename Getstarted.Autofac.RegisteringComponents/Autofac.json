@@ -1,0 +1,23 @@
+{
+  "components": [
+    {
+      "type": "Getstarted.Autofac.DateTimeModule.SystemDateTimeProvider, Getstarted.Autofac.DateTimeModule",
+      "services": [
+        {
+          "type": "Getstarted.Autofac.DateTimeModule.IDateTimeProvider, Getstarted.Autofac.DateTimeModule"
+        }
+      ]
+    },
+    {
+      "type": "Getstarted.Autofac.DateTimeModule.FixedDateTimeProvider, Getstarted.Autofac.DateTimeModule",
+      "services": [
+        {
+          "type": "Getstarted.Autofac.DateTimeModule.IDateTimeProvider, Getstarted.Autofac.DateTimeModule"
+        }
+      ],
+      "parameters": {
+        "fixedDateTime" :  "1900-12-31T23:59:59"
+      }
+    }
+  ]
+}

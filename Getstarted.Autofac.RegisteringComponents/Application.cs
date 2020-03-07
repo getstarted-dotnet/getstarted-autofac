@@ -5,7 +5,9 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Autofac;
+using Autofac.Configuration;
 using Getstarted.Autofac.DateTimeModule;
+using Microsoft.Extensions.Configuration;
 
 namespace Getstarted.Autofac.RegisteringComponents
 {
@@ -18,8 +20,8 @@ namespace Getstarted.Autofac.RegisteringComponents
             RegisterMultiplePreserveExistingDefaultAndResolve();
 
             RegisterModule();
-
             RegisterAssembly();
+            RegisterConfigurationModule();
 
             Console.WriteLine();
             Console.WriteLine("Press any key to quit.");
@@ -141,6 +143,29 @@ namespace Getstarted.Autofac.RegisteringComponents
                 Console.WriteLine("Resolved Module Registered {0}#CurrentDateTime = {1}",
                     dateTimeProvider.GetType().Name, dateTimeProvider.CurrentDateTime);
             }
+        }
+
+
+        private static void RegisterConfigurationModule()
+        {
+            Console.WriteLine();
+            var builder = new ContainerBuilder();
+
+            var config = new ConfigurationBuilder();
+            config.AddJsonFile("Autofac.json");
+            var configModule = new ConfigurationModule(config.Build());
+            builder.RegisterModule(configModule);
+            Console.WriteLine("# Registered Configuration Module from Autofac.json file.");
+
+            var container = builder.Build();
+
+            using (var scope = container.BeginLifetimeScope())
+            {
+                var dateTimeProvider = scope.Resolve<IDateTimeProvider>();
+                Console.WriteLine("Resolved Module Registered {0}#CurrentDateTime = {1}",
+                    dateTimeProvider.GetType().Name, dateTimeProvider.CurrentDateTime);
+            }
+
         }
     }
 }
