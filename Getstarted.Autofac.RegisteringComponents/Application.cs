@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using Autofac.Configuration;
@@ -15,20 +16,24 @@ namespace Getstarted.Autofac.RegisteringComponents
     {
         static void Main(string[] args)
         {
-            RegisterAndResolve();
-            RegisterMultipleAndResolveWithDefault();
-            RegisterMultiplePreserveExistingDefaultAndResolve();
+            RegisterSingle();
+            RegisterMultiple();
+            RegisterMultiplePreserveExistingDefault();
 
             RegisterModule();
-            RegisterAssembly();
             RegisterConfigurationModule();
+
+            RegisterAssembly();
+
+            RegisterAsInstanceLifetimeScope();
+            RegisterAsSingleton();
 
             Console.WriteLine();
             Console.WriteLine("Press any key to quit.");
             Console.ReadKey();
         }
 
-        private static void RegisterAndResolve()
+        private static void RegisterSingle()
         {
             Console.WriteLine();
             var builder = new ContainerBuilder();
@@ -49,7 +54,7 @@ namespace Getstarted.Autofac.RegisteringComponents
             }
         }
 
-        private static void RegisterMultipleAndResolveWithDefault()
+        private static void RegisterMultiple()
         {
             Console.WriteLine();
             var builder = new ContainerBuilder();
@@ -77,7 +82,7 @@ namespace Getstarted.Autofac.RegisteringComponents
         }
 
 
-        private static void RegisterMultiplePreserveExistingDefaultAndResolve()
+        private static void RegisterMultiplePreserveExistingDefault()
         {
             Console.WriteLine();
             var builder = new ContainerBuilder();
@@ -124,28 +129,6 @@ namespace Getstarted.Autofac.RegisteringComponents
             }
         }
 
-        private static void RegisterAssembly()
-        {
-            Console.WriteLine();
-            var builder = new ContainerBuilder();
-
-            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            builder.RegisterAssemblyModules<DateTimeProviderModule>(assemblies);
-            Console.WriteLine("# Registered Module {0} from {1} assemblies.",
-                typeof(DateTimeProviderModule).Name,
-                assemblies.Count());
-
-            var container = builder.Build();
-
-            using (var scope = container.BeginLifetimeScope())
-            {
-                var dateTimeProvider = scope.Resolve<IDateTimeProvider>();
-                Console.WriteLine("Resolved Module Registered {0}#CurrentDateTime = {1}",
-                    dateTimeProvider.GetType().Name, dateTimeProvider.CurrentDateTime);
-            }
-        }
-
-
         private static void RegisterConfigurationModule()
         {
             Console.WriteLine();
@@ -167,5 +150,84 @@ namespace Getstarted.Autofac.RegisteringComponents
             }
 
         }
+        
+        private static void RegisterAssembly()
+        {
+            Console.WriteLine();
+            var builder = new ContainerBuilder();
+
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            builder.RegisterAssemblyModules<DateTimeProviderModule>(assemblies);
+            Console.WriteLine("# Registered Module {0} from {1} assemblies.",
+                typeof(DateTimeProviderModule).Name,
+                assemblies.Count());
+
+            var container = builder.Build();
+
+            using (var scope = container.BeginLifetimeScope())
+            {
+                var dateTimeProvider = scope.Resolve<IDateTimeProvider>();
+                Console.WriteLine("Resolved Module Registered {0}#CurrentDateTime = {1}",
+                    dateTimeProvider.GetType().Name, dateTimeProvider.CurrentDateTime);
+            }
+        }
+
+        private static void RegisterAsInstanceLifetimeScope()
+        {
+            Console.WriteLine();
+            var builder = new ContainerBuilder();
+
+            builder.Register(c => new FixedDateTimeProvider(DateTime.Now))
+                .As<IDateTimeProvider>().InstancePerLifetimeScope();
+            Console.WriteLine("# Registered {0} As InstancePerLifetimeScope.",
+                typeof(FixedDateTimeProvider).Name);
+
+            var container = builder.Build();
+
+            using (var scope = container.BeginLifetimeScope())
+            {
+                var dateTimeProvider = scope.Resolve<IDateTimeProvider>();
+                Console.WriteLine("Resolved {0}#CurrentDateTime = {1}",
+                    dateTimeProvider.GetType().Name, dateTimeProvider.CurrentDateTime);
+            }
+
+            Thread.Sleep(2000);
+            using (var scope = container.BeginLifetimeScope())
+            {
+                var dateTimeProvider = scope.Resolve<IDateTimeProvider>();
+                Console.WriteLine("Resolved in another scope after 2 sec {0}#CurrentDateTime = {1}",
+                    dateTimeProvider.GetType().Name, dateTimeProvider.CurrentDateTime);
+            }
+        }
+
+
+        private static void RegisterAsSingleton()
+        {
+            Console.WriteLine();
+            var builder = new ContainerBuilder();
+
+            builder.Register(c => new FixedDateTimeProvider(DateTime.Now))
+                .As<IDateTimeProvider>().SingleInstance();
+            Console.WriteLine("# Registered {0} As Singleton.",
+                typeof(FixedDateTimeProvider).Name);
+
+            var container = builder.Build();
+
+            using (var scope = container.BeginLifetimeScope())
+            {
+                var dateTimeProvider = scope.Resolve<IDateTimeProvider>();
+                Console.WriteLine("Resolved {0}#CurrentDateTime = {1}",
+                    dateTimeProvider.GetType().Name, dateTimeProvider.CurrentDateTime);
+            }
+
+            Thread.Sleep(2000);
+            using (var scope = container.BeginLifetimeScope())
+            {
+                var dateTimeProvider = scope.Resolve<IDateTimeProvider>();
+                Console.WriteLine("Resolved in another scope after 2 sec {0}#CurrentDateTime = {1}",
+                    dateTimeProvider.GetType().Name, dateTimeProvider.CurrentDateTime);
+            }
+        }
+
     }
 }
